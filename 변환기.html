@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나만의 한글 ↔ 코드 변환기 (완성본)</title>
+    <style>
+        /* CSS 스타일은 이전과 동일하므로 생략하지 않고 모두 포함합니다. */
+        body { font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; margin: 0; background-color: #f0f2f5; }
+        .container { width: 90%; max-width: 1200px; display: flex; gap: 20px; }
+        .main-box { flex: 3; display: flex; gap: 20px; }
+        .rules-box { flex: 1; display: flex; flex-direction: column; }
+        .box { flex: 1; display: flex; flex-direction: column; }
+        h2 { margin-top: 0; margin-bottom: 10px; text-align: center; color: #333; }
+        textarea { width: 100%; height: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; resize: vertical; box-sizing: border-box; }
+        #rulesTextarea { height: 570px; font-family: monospace; font-size: 14px; }
+        .controls { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+        .char-count { font-size: 14px; color: #666; margin-left: auto; }
+        button { padding: 8px 15px; border: none; border-radius: 4px; background-color: #007bff; color: white; font-size: 14px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        button.clear { background-color: #dc3545; }
+        button.clear:hover { background-color: #c82333; }
+        .warning { margin-top: 20px; font-size: 14px; color: #d93025; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>나만의 한글 ↔ 코드 변환기 (완성본)</h1>
+
+<div class="container">
+    <div class="main-box" style="display: flex; gap: 20px;">
+        <div class="box">
+            <h2>한글 입력</h2>
+            <textarea id="koreanInput" placeholder="한글을 입력하세요..."></textarea>
+            <div class="controls">
+                <button id="copyKoreanBtn">한글 복사</button>
+                <div id="koreanCharCount" class="char-count">0자</div>
+            </div>
+        </div>
+        <div class="box">
+            <h2>코드 변환</h2>
+            <textarea id="codeInput" placeholder="코드를 입력하세요..."></textarea>
+            <div class="controls">
+                <button id="copyCodeBtn">코드 복사</button>
+                <div id="codeCharCount" class="char-count">0자</div>
+            </div>
+        </div>
+    </div>
+    <div class="rules-box">
+        <h2>변환 규칙 (자모:코드)</h2>
+        <textarea id="rulesTextarea"></textarea>
+        <div class="controls">
+             <button id="applyRulesBtn">규칙 적용</button>
+             <button id="clearAllBtn" class="clear">전체 삭제</button>
+        </div>
+    </div>
+</div>
+
+<div class="warning">
+    ⚠️ 이 도구는 규칙 테스트 및 교육용입니다. 실제 비밀번호를 저장하거나 관리하는 용도로 사용하지 마세요.
+</div>
+
+<script>
+    // --- 요소 가져오기 (이전과 동일) ---
+    const koreanTextarea = document.getElementById('koreanInput');
+    const codeTextarea = document.getElementById('codeInput');
+    const rulesTextarea = document.getElementById('rulesTextarea');
+    const applyRulesBtn = document.getElementById('applyRulesBtn');
+    const copyKoreanBtn = document.getElementById('copyKoreanBtn');
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const koreanCharCount = document.getElementById('koreanCharCount');
+    const codeCharCount = document.getElementById('codeCharCount');
+
+    // --- 변수 및 한글 자모 상수 ---
+    let korToEng = {};
+    let engToKor = {};
+
+    const KOREAN_START_CODE = 44032;
+    const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    const JUNGSEONG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+    const JONGSEONG = ['', 'ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+    const JUNGSEONG_COMBINATIONS = { 'ㅗㅏ':'ㅘ', 'ㅗㅐ':'ㅙ', 'ㅗㅣ':'ㅚ', 'ㅜㅓ':'ㅝ', 'ㅜㅔ':'ㅞ', 'ㅜㅣ':'ㅟ', 'ㅡㅣ':'ㅢ' };
+    const JONGSEONG_COMBINATIONS = { 'ㄱㅅ':'ㄳ', 'ㄴㅈ':'ㄵ', 'ㄴㅎ':'ㄶ', 'ㄹㄱ':'ㄺ', 'ㄹㅁ':'ㄻ', 'ㄹㅂ':'ㄼ', 'ㄹㅅ':'ㄽ', 'ㄹㅌ':'ㄾ', 'ㄹㅍ':'ㄿ', 'ㄹㅎ':'ㅀ', 'ㅂㅅ':'ㅄ' };
+
+    // --- 핵심 함수 ---
+    function parseAndApplyRules() {
+        korToEng = {};
+        engToKor = {};
+        const rules = rulesTextarea.value.split('\n');
+        rules.forEach(line => {
+            if (line.startsWith('#')) return; // 주석 처리
+            const parts = line.split(':');
+            if (parts.length === 2) {
+                const kor = parts[0].trim();
+                const eng = parts[1].trim();
+                if (kor && eng) {
+                    korToEng[kor] = eng;
+                    engToKor[eng] = kor;
+                }
+            }
+        });
+        updateConversion(true);
+    }
+
+    function convertToCode(koreanText) {
+        let result = "";
+        for (const char of koreanText) {
+            const charCode = char.charCodeAt(0);
+            if (charCode >= KOREAN_START_CODE && charCode <= 55203) {
+                const baseCode = charCode - KOREAN_START_CODE;
+                const jongseongIndex = baseCode % 28;
+                const jungseongIndex = ((baseCode - jongseongIndex) / 28) % 21;
+                const choseongIndex = Math.floor(((baseCode - jongseongIndex) / 28) / 21);
+                result += korToEng[CHOSEONG[choseongIndex]] || CHOSEONG[choseongIndex];
+                result += korToEng[JUNGSEONG[jungseongIndex]] || JUNGSEONG[jungseongIndex];
+                if (jongseongIndex > 0) result += korToEng[JONGSEONG[jongseongIndex]] || JONGSEONG[jongseongIndex];
+            } else {
+                result += korToEng[char] || char;
+            }
+        }
+        return result;
+    }
+    
+    // [최종] 코드 -> 한글 조합 함수
+    function convertToKorean(codeText) {
+        let jamoStream = [];
+        const sortedCodes = Object.keys(engToKor).sort((a, b) => b.length - a.length);
+        let i = 0;
+        while (i < codeText.length) {
+            let found = false;
+            for (const code of sortedCodes) {
+                if (codeText.substring(i, i + code.length) === code) {
+                    jamoStream.push(engToKor[code]);
+                    i += code.length;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                jamoStream.push(codeText[i]);
+                i++;
+            }
+        }
+
+        let result = "";
+        let buffer = []; // [초성, 중성, 종성]
+        
+        const commitSyllable = () => {
+            if (buffer.length === 0) return;
+            const [ch, ju, jo] = buffer;
+            if (!ju) { // 중성이 없는 경우 (자음만 입력)
+                result += ch;
+                return;
+            }
+            const chIndex = CHOSEONG.indexOf(ch);
+            const juIndex = JUNGSEONG.indexOf(ju);
+            const joIndex = jo ? JONGSEONG.indexOf(jo) : 0;
+            const charCode = KOREAN_START_CODE + (chIndex * 21 * 28) + (juIndex * 28) + joIndex;
+            result += String.fromCharCode(charCode);
+            buffer = [];
+        };
+
+        for (const jamo of jamoStream) {
+            if (buffer.length === 0) { // 새 글자 시작
+                if (CHOSEONG.includes(jamo)) buffer.push(jamo);
+                else result += jamo;
+            } else if (buffer.length === 1) { // 초성만 있는 상태
+                const [ch] = buffer;
+                if (JUNGSEONG.includes(jamo)) buffer.push(jamo);
+                else {
+                    commitSyllable();
+                    if (CHOSEONG.includes(jamo)) buffer.push(jamo);
+                    else result += jamo;
+                }
+            } else if (buffer.length === 2) { // 초성+중성 상태
+                const [ch, ju] = buffer;
+                const combinedJung = JUNGSEONG_COMBINATIONS[ju + jamo];
+                if (combinedJung) {
+                    buffer[1] = combinedJung; // 겹모음으로 합치기
+                } else if (JONGSEONG.includes(jamo)) {
+                    buffer.push(jamo); // 받침으로 추가
+                } else {
+                    commitSyllable();
+                    if (CHOSEONG.includes(jamo)) buffer.push(jamo);
+                    else result += jamo;
+                }
+            } else if (buffer.length === 3) { // 초성+중성+종성 상태
+                const [ch, ju, jo] = buffer;
+                const combinedJong = JONGSEONG_COMBINATIONS[jo + jamo];
+                if (combinedJong && JONGSEONG.includes(combinedJong)) {
+                    buffer[2] = combinedJong; // 겹받침으로 합치기
+                } else if (JUNGSEONG.includes(jamo)) { // 다음 글자가 모음으로 시작 (연음)
+                    const lastJong = buffer.pop();
+                    commitSyllable();
+                    buffer.push(lastJong, jamo); // 새 글자의 초성, 중성으로
+                } else {
+                    commitSyllable();
+                    if (CHOSEONG.includes(jamo)) buffer.push(jamo);
+                    else result += jamo;
+                }
+            }
+        }
+        commitSyllable(); // 마지막에 버퍼에 남은 글자 처리
+        return result;
+    }
+
+    // --- 나머지 유틸리티 함수 및 이벤트 리스너 (이전과 동일) ---
+    function updateCharCounts() {
+        koreanCharCount.textContent = `${koreanTextarea.value.length}자`;
+        codeCharCount.textContent = `${codeTextarea.value.length}자`;
+    }
+    function updateConversion(isKoreanToCode) {
+        if (isKoreanToCode) {
+            codeTextarea.value = convertToCode(koreanTextarea.value);
+        } else {
+            koreanTextarea.value = convertToKorean(codeTextarea.value);
+        }
+        updateCharCounts();
+    }
+    koreanTextarea.addEventListener('input', () => updateConversion(true));
+    codeInput.addEventListener('input', () => updateConversion(false));
+    applyRulesBtn.addEventListener('click', parseAndApplyRules);
+    clearAllBtn.addEventListener('click', () => {
+        koreanTextarea.value = ''; codeTextarea.value = ''; updateCharCounts();
+    });
+    copyKoreanBtn.addEventListener('click', () => navigator.clipboard.writeText(koreanTextarea.value).then(() => alert('한글 내용이 복사되었습니다.')));
+    copyCodeBtn.addEventListener('click', () => navigator.clipboard.writeText(codeTextarea.value).then(() => alert('코드 내용이 복사되었습니다.')));
+    
+    // --- 초기화 ---
+    function initialize() {
+        const defaultRules = `# --- 자음 규칙 ---
+ㄱ:그
+ㄲ:기
+ㄴ:느
+ㄷ:드
+ㄸ:디
+ㄹ:르
+ㅁ:므
+ㅂ:브
+ㅃ:비
+ㅅ:스
+ㅆ:시
+ㅇ:으
+ㅈ:즈
+ㅉ:지
+ㅊ:츠
+ㅋ:크
+ㅌ:트
+ㅍ:프
+ㅎ:흐
+
+# --- 겹받침 규칙 ---
+ㄳ:그스
+ㄵ:느즈
+ㄶ:느흐
+ㄺ:르그
+ㄻ:르므
+ㄼ:르브
+ㄽ:르스
+ㄾ:르트
+ㄿ:르프
+ㅀ:르흐
+ㅄ:브스
+
+
+# --- 모음 규칙 ---
+ㅏ:1
+ㅐ:10
+ㅑ:❤
+ㅒ:❤0
+ㅓ:🍀
+ㅔ:🍀0
+ㅕ:4
+ㅖ:40
+ㅗ:δ
+ㅘ:δ1
+ㅙ:δ10
+ㅚ:δ0
+ㅛ:6
+ㅜ:Ͳ
+ㅝ:Ͳ🍀
+ㅞ:Ͳ🍀0
+ㅟ:Ͳ0
+ㅠ:8
+ㅡ:9
+ㅢ:90
+ㅣ:0`;
+        rulesTextarea.value = defaultRules.split('\n').filter(line => line.trim() !== '').join('\n'); // 불필요한 공백 라인 제거
+        parseAndApplyRules();
+    }
+    initialize();
+</script>
+
+</body>
+</html>
