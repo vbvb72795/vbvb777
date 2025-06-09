@@ -1,65 +1,65 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>나만의 한글 ↔ 코드 변환기 (완성본)</title>
-    <style>
-        /* CSS 스타일은 이전과 동일하므로 생략하지 않고 모두 포함합니다. */
-        body { font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; margin: 0; background-color: #f0f2f5; }
-        .container { width: 90%; max-width: 1200px; display: flex; gap: 20px; }
-        .main-box { flex: 3; display: flex; gap: 20px; }
-        .rules-box { flex: 1; display: flex; flex-direction: column; }
-        .box { flex: 1; display: flex; flex-direction: column; }
-        h2 { margin-top: 0; margin-bottom: 10px; text-align: center; color: #333; }
-        textarea { width: 100%; height: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; resize: vertical; box-sizing: border-box; }
-        #rulesTextarea { height: 570px; font-family: monospace; font-size: 14px; }
-        .controls { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
-        .char-count { font-size: 14px; color: #666; margin-left: auto; }
-        button { padding: 8px 15px; border: none; border-radius: 4px; background-color: #007bff; color: white; font-size: 14px; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: #0056b3; }
-        button.clear { background-color: #dc3545; }
-        button.clear:hover { background-color: #c82333; }
-        .warning { margin-top: 20px; font-size: 14px; color: #d93025; text-align: center; font-weight: bold; }
-    </style>
-</head>
-<body>
+<!DOCTYPE HTML>
+<HTML  언어="ko">
+<머리>
+ <메타  문자 집합=UTFUTF-8">
+ <제목>나만의 한글 ↔ 코드 변환기 (완성본)</제목>
+ <스타일>
+ /* CSS 스타일은 이전과 동일하므로 생략하지 않고 모두 포함합니다. */
+ 본문 { 글꼴 패밀리: '말군 고딕', 산세리프; 디스플레이: 플렉스; 플렉스 방향: 열; 정당화 내용: 중심; 정렬 항목: 중심; 패딩: 20px; 여백: 0; 배경색: #f0f2f5; }
+ .container {폭: 90%; 최대 폭: 1200 px; 디스플레이: 플렉스; 갭: 20 px; }
+ .메인 박스 {플렉스: 3; 디스플레이: 플렉스; 갭: 20 px; }
+ .rules 상자 {flex: 1; 디스플레이: flex; flex-direction: 열; }
+ .box { flex: 1; 디스플레이: flex; flex-direction: 열; }
+ h2 { 여백 위: 0; 여백 아래: 10 px; 텍스트 align: 가운데; 색상: #333; }
+ 텍스트 영역 {폭: 100%; 높이: 300 px; 패딩: 10 px; 테두리: 1 px 솔리드 #cc; 테두리-radius: 4 px; 글꼴 크기: 16 px; 크기: 세로; 상자-sizing: 테두리-상자; }
+ #규칙텍스트 영역 {높이: 570px; 글꼴 패밀리: 모노스페이스; 글꼴 크기: 14px; }
+ .controls {디스플레이: 플렉스; 갭: 10 px; 마진 탑: 10 px; 정렬 items: 센터; }
+ .char-count { 글꼴 크기}: 14 px; 색상: #666; 여백 왼쪽: auto; }
+ 버튼 { 패딩: 8 px 15 px; 테두리: 없음; 테두리-radius: 4 px; 배경색: #007bff; 색상: 흰색; 글꼴 크기: 14 px; 커서: 포인터; 전환: 배경색 0.2초; }
+ 버튼: hover {배경색: #0056b3; }
+ button.clear {background-color: #dc3545; }
+ button.clear: hover {background-color: #c82333; }
+ .경고 { 여백 상단: 20 px; 글꼴 크기: 14 px; 색상: #d93025; 텍스트 align: 가운데; 글꼴 무게: 굵게; }
+ </스타일>
+</머리>
+<바디>
 
 <h1>나만의 한글 ↔ 코드 변환기 (완성본)</h1>
 
-<div class="container">
-    <div class="main-box" style="display: flex; gap: 20px;">
-        <div class="box">
-            <h2>한글 입력</h2>
-            <textarea id="koreanInput" placeholder="한글을 입력하세요..."></textarea>
-            <div class="controls">
-                <button id="copyKoreanBtn">한글 복사</button>
-                <div id="koreanCharCount" class="char-count">0자</div>
-            </div>
-        </div>
-        <div class="box">
+<디브  학급="container">
+ <디브  학급="메인 박스" 스타일=스타일="디스플레이: 플렉스; 갭: 20 px;"
+ <디브  학급="상자">
+ <h2>한글 입력</h2>
+ <텍스트 영역  ID="한국어 입력" 자리 표시자=자리 표시자="한글을 입력하세요..."</textarea텍스트 영역
+ <디브  학급="controls">
+ ID버튼 id="copyKoreanBtn">한글 복사</버튼>
+ <디브  ID="한국 차 수" 클래스=클래스="챠 수"0 자</디브>
+            </디브>
+        </디브>
+        <디브  학급="상자">
             <h2>코드 변환</h2>
-            <textarea id="codeInput" placeholder="코드를 입력하세요..."></textarea>
-            <div class="controls">
-                <button id="copyCodeBtn">코드 복사</button>
-                <div id="codeCharCount" class="char-count">0자</div>
-            </div>
-        </div>
-    </div>
-    <div class="rules-box">
+            <텍스트 영역  ID="코드 입력" placeholder="코드를 입력하세요..."></텍스트 영역>
+            <디브  학급="controls">
+                <버튼  ID="copyCodeBtn">코드 복사</버튼>
+                <디브  ID="codeCharCount" class=클래스 ="챠0자세어보세요">0 자</div>>
+             </div>div>
+         </div>div>
+     </div>div>
+    <디브  학급="rules 상자">
         <h2>변환 규칙 (자모:코드)</h2>
-        <textarea id="rulesTextarea"></textarea>
-        <div class="controls">
-             <button id="applyRulesBtn">규칙 적용</button>
-             <button id="clearAllBtn" class="clear">전체 삭제</button>
-        </div>
-    </div>
-</div>
+        <텍스트 영역  ID="규칙텍스트 영역"></텍스트 영역>
+        <디브  학급="controls">
+             <버튼  ID="applyRulesBtn">규칙 적용</버튼>
+             <버튼  ID="clearAllBtn" class=클래스 =">전체 삭제">전체 삭제</버튼>button>
+         </div>div>
+     </div>div>
+</div>div>
 
-<div class="warning">
+<디브  학급="경고">
     ⚠️ 이 도구는 규칙 테스트 및 교육용입니다. 실제 비밀번호를 저장하거나 관리하는 용도로 사용하지 마세요.
-</div>
+</디브>
 
-<script>
+<대본>
     // --- 요소 가져오기 (이전과 동일) ---
     const koreanTextarea = document.getElementById('koreanInput');
     const codeTextarea = document.getElementById('codeInput');
